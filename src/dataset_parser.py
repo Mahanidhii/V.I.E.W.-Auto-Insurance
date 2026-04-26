@@ -6,8 +6,6 @@ from pathlib import Path
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 # --- Configuration Paths ---
-# This automatically finds your project root (D:\Projects\Context-Aware...)
-# --- Configuration Paths ---
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
 # Pointing to the validation files now
