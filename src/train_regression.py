@@ -8,13 +8,13 @@ import json
 import warnings
 warnings.filterwarnings('ignore')
 
-# --- Configuration Paths ---
+#Configuration Paths
 PROJECT_ROOT    = Path(__file__).resolve().parent.parent
 CSV_PATH        = PROJECT_ROOT / "data"   / "insurance_claims.csv"
 MODEL_SAVE_PATH = PROJECT_ROOT / "models" / "catboost_claim_model.cbm"
 METADATA_PATH   = PROJECT_ROOT / "models" / "model_features.json"
 
-# ── 3-class tiers at Q33/Q66 (≈330 samples each → best macro-F1 achievable) ──
+# 3-class tiers at Q33/Q66 (≈330 samples each → best macro-F1 achievable) ──
 # Q33≈35k  Q66≈47k  → Low/Medium/High each ~333 rows
 TIER_BINS   = [0, 35_000, 47_000, float('inf')]
 TIER_LABELS = ['Low', 'Medium', 'High']
@@ -60,11 +60,9 @@ def engineer_features(df: pd.DataFrame) -> pd.DataFrame:
     # Fraud signal
     df['fraud_flag'] = (df['fraud_reported'] == 'Y').astype(int)
 
-    # Replace '?' with 'Unknown'
+    # Replacing '?' with 'Unknown'
     df = df.replace('?', 'Unknown')
-
     return df
-
 
 def build_and_train_regression():
     print("Loading Tabular Data...")
@@ -75,24 +73,24 @@ def build_and_train_regression():
     df = pd.read_csv(CSV_PATH)
     df = engineer_features(df)
 
-    # ── 2. Feature list ───────────────────────────────────────────────────────
+    # Feature list
     features = [
-        # Vehicle
-        'auto_make', 'auto_model', 'vehicle_age',
-        # Incident description
+
+        'auto_make', 'auto_model', 'vehicle_age',   # Vehicle
+        
         'incident_severity', 'severity_ordinal',
         'incident_type', 'collision_type',
         'number_of_vehicles_involved', 'bodily_injuries', 'witnesses',
-        'incident_hour_of_the_day', 'hour_bucket',
-        # Scene / authority
-        'authorities_contacted', 'property_damage', 'police_report_available',
-        # Policy / financial
-        'policy_deductable', 'umbrella_limit',
+        'incident_hour_of_the_day', 'hour_bucket', # Incident description
+        
+        'authorities_contacted', 'property_damage', 'police_report_available', # Scene / authority
+        
+        'policy_deductable', 'umbrella_limit', # Policy / financial
         'policy_annual_premium', 'premium_deductable_ratio',
-        # Insured profile
-        'insured_occupation', 'insured_relationship',
-        # Interaction / signal features
-        'fraud_flag', 'vehicles_x_injuries', 'total_other_claims',
+        
+        'insured_occupation', 'insured_relationship', # Insured profile
+        
+        'fraud_flag', 'vehicles_x_injuries', 'total_other_claims', # Interaction / signal features
     ]
     target = 'vehicle_claim'
 
@@ -112,12 +110,12 @@ def build_and_train_regression():
     for col in categorical_features:
         X[col] = X[col].fillna('Unknown').astype(str)
 
-    # ── 3. Train/Test split (stratified on tier for balanced F1) ─────────────
+    #3. Train/Test split (stratified on tier for balanced F1) ─────────────
     X_train, X_test, y_train, y_test, yt_train, yt_test = train_test_split(
         X, y, y_tier, test_size=0.2, random_state=42, stratify=y_tier
     )
 
-    # ── 4. CatBoost REGRESSOR — minimise MAE ─────────────────────────────────
+    # 4. CatBoost REGRESSOR — minimise MAE ─────────────────────────────────
     print("\n--- [1/2] Training CatBoost Regressor (MAE objective) ---")
     reg_model = CatBoostRegressor(
         iterations=4000,
@@ -134,7 +132,7 @@ def build_and_train_regression():
     )
     reg_model.fit(X_train, y_train, eval_set=(X_test, y_test))
 
-    # ── 5. CatBoost CLASSIFIER — maximise macro F1 ───────────────────────────
+    # 5. CatBoost CLASSIFIER — maximise macro F1
     print("\n--- [2/2] Training CatBoost Classifier (Tier F1 objective) ---")
     clf_model = CatBoostClassifier(
         iterations=6000,
