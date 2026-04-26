@@ -6,7 +6,7 @@ from tensorflow.keras.applications import EfficientNetB0
 import matplotlib.pyplot as plt
 from pathlib import Path
 
-# --- Configuration & Paths ---
+# Configuration & Path 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 TRAIN_DIR = str(PROJECT_ROOT / 'data' / 'processed' / 'train')
 VAL_DIR = str(PROJECT_ROOT / 'data' / 'processed' / 'val')
@@ -21,7 +21,7 @@ BATCH_SIZE = 32
 def build_and_train():
     print("Num GPUs Available: ", len(tf.config.list_physical_devices('GPU')))
     
-    # 1. Load Data Directly from Directories
+    # Loading Data Directly from Directories
     print("Loading Training Data...")
     train_dataset = tf.keras.utils.image_dataset_from_directory(
         TRAIN_DIR,
@@ -32,7 +32,6 @@ def build_and_train():
     )
 
     print("Loading Validation Data...")
-    # If you haven't processed validation data yet, we can split it from train for now
     if os.path.exists(VAL_DIR) and len(os.listdir(VAL_DIR)) > 0:
         val_dataset = tf.keras.utils.image_dataset_from_directory(
             VAL_DIR,
@@ -52,7 +51,7 @@ def build_and_train():
             image_size=IMG_SIZE, batch_size=BATCH_SIZE, label_mode='categorical'
         )
 
-    # Save class names for the Streamlit app later
+    # Saving class names for the Streamlit app later
     class_names = train_dataset.class_names
     num_classes = len(class_names)
     with open(CLASS_MAP_PATH, 'w') as f:
@@ -64,16 +63,16 @@ def build_and_train():
     train_dataset = train_dataset.prefetch(buffer_size=AUTOTUNE)
     val_dataset = val_dataset.prefetch(buffer_size=AUTOTUNE)
 
-    # 2. Data Augmentation (Runs on GPU)
+    # Data Augmentation 
     # UPGRADE 1: Advanced Shadow/Texture Augmentation
     data_augmentation = tf.keras.Sequential([
         layers.RandomFlip('horizontal'),
         layers.RandomRotation(0.15),
         layers.RandomZoom(0.15),
-        layers.RandomContrast(0.2) # Forces the AI to find dents in dark shadows
+        layers.RandomContrast(0.2) 
     ])
 
-    # 3. Build the EfficientNet Model
+    # Build the EfficientNet Model
     # Note: EfficientNet automatically normalizes pixel values, no Rescaling needed!
     base_model = EfficientNetB0(
         input_shape=(224, 224, 3),
@@ -93,7 +92,7 @@ def build_and_train():
     
     model = tf.keras.Model(inputs, outputs)
 
-    # 4. Phase 1: Train Classification Head
+    # Train Classification Head
     print("\n--- PHASE 1: Training Classification Head ---")
     model.compile(
         optimizer=tf.keras.optimizers.Adam(learning_rate=1e-3),
@@ -107,22 +106,22 @@ def build_and_train():
         epochs=8
     )
 
-    # 5. Phase 2: Fine-Tuning (Unfreeze top layers)
+    # Phase 2: Fine-Tuning (Unfreeze top layers)
     print("\n--- PHASE 2: Fine-Tuning ---")
     base_model.trainable = True
     
-    # UPGRADE 2: Unfreeze Top 40 layers for deeper texture learning
+    # Unfreeze Top 40 layers for deeper texture learning #1
     for layer in base_model.layers[:-40]:
         layer.trainable = False
 
-    # Compile with a much lower learning rate
+    # Compile with a much lower learning rate #2
     model.compile(
         optimizer=tf.keras.optimizers.Adam(learning_rate=1e-4),
         loss='categorical_crossentropy',
         metrics=['accuracy', tf.keras.metrics.F1Score(average='macro', name='f1_score')]
     )
 
-    # UPGRADE 3: Advanced Callbacks (Learning Rate Scheduler)
+    # Advanced Callbacks (Learning Rate Scheduler) #3
     early_stop = callbacks.EarlyStopping(monitor='val_f1_score', patience=5, restore_best_weights=True, mode='max')
     reduce_lr = callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.2, patience=2, min_lr=1e-6, verbose=1)
     checkpoint = callbacks.ModelCheckpoint(MODEL_SAVE_PATH, save_best_only=True, monitor='val_f1_score', mode='max')
