@@ -29,7 +29,7 @@ SEVERITY_STYLE = {
     "Major Damage":    {"emoji": "🔴", "color": "#e03131", "label": "Major Damage"},
 }
 
-st.title("📸 Step 1: Visual Damage Assessment")
+st.title("Visual Damage Assessment")
 st.markdown("Upload a clear photo of the vehicle damage for AI classification.")
 
 # Load Model & Mappings (Cached for Speed)
