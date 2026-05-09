@@ -5,7 +5,7 @@ import sys
 from pathlib import Path
 from catboost import CatBoostRegressor
 
-# Linking the Utils ---
+# Linking the Utils
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 sys.path.append(str(PROJECT_ROOT / "app"))
 
