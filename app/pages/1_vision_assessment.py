@@ -25,8 +25,8 @@ CLASS_TRANSLATION = {
 
 SEVERITY_STYLE = {
     "Minor Damage":    {"emoji": "🟡", "color": "#f5c518", "label": "Minor Damage"},
-    "Moderate Damage": {"emoji": "🟠", "color": "#ff7b00", "label": "Moderate Damage"},
-    "Major Damage":    {"emoji": "🔴", "color": "#e03131", "label": "Major Damage"},
+    "Moderate Damage": {"emoji": "🟠", "color": "#ea7e1a", "label": "Moderate Damage"},
+    "Major Damage":    {"emoji": "🔴", "color": "#ec0b0b", "label": "Major Damage"},
 }
 
 st.title("Visual Damage Assessment")
